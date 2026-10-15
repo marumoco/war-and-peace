@@ -12,20 +12,7 @@
 
 ---
 
-## 🚀 GitHub Pages での公開手順（初回のみ）
 
-1. GitHub で新しいリポジトリを作成します：
-   - Repository name: **`war-and-peace`**
-   - Visibility: **Public**（公開）
-   - 「Add a README file」等のチェックは入れずに「Create repository」をクリック
-2. 本フォルダ内の全ファイルを GitHub にアップロード（ドラッグ＆ドロップして Commit changes）します。
-3. リポジトリの **Settings → Pages** を開きます：
-   - **Build and deployment** の Source: **「Deploy from a branch」**
-   - Branch: **`main`** / **`/(root)`** を選択して **「Save」**
-4. 1〜2分後、以下のURLで公開されます：
-   🌐 **`https://marumoco.github.io/war-and-peace/`**
-
----
 
 ## 🛠️ メンテナンス手順（今後のテキスト修正・更新）
 
