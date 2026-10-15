@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="referrer" content="no-referrer">
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e293b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="戦争と平和リーダー">
+  <title>トルストイ『戦争と平和』全70大テーマ・心をえぐる戦争論リーダー（時系列・厳密語順直訳版）</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    button, div { touch-action: manipulation; }
+    /* 拡大時でも単語途中の不自然な改行を防止 */
+    .word-natural {
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: none;
+    }
+    .note-natural {
+      word-break: normal;
+      overflow-wrap: break-word;
+    }
+    #drawerBackdrop { transition: opacity 0.2s ease-in-out; }
+    #tocDrawer { transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans text-sm antialiased selection:bg-blue-200">
+  <!-- 音声再生用グローバルオーディオ要素 (no-referrer適用) -->
+  <audio id="globalAudio" referrerpolicy="no-referrer" preload="none"></audio>
+
+  <!-- 極薄スリムヘッダー（高さ約35px・画面圧迫ゼロ） -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+    <div class="max-w-3xl mx-auto px-2 py-1 flex justify-between items-center gap-1.5">
+      <div class="flex items-center space-x-1.5 min-w-0">
+        <button onclick="toggleDrawer(true)" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border border-slate-300 text-slate-800 text-[11px] font-bold rounded flex items-center gap-1 shrink-0">
+          <span>≡</span>
+          <span>目次 (全70場面)</span>
+        </button>
+        <span class="font-bold text-slate-900 text-xs truncate" id="headerTitle">📖 トルストイ『戦争と平和』</span>
+      </div>
+      <div class="flex items-center space-x-1 shrink-0">
+        <button onclick="prevTheme()" id="btnPrevTop" class="px-1.5 py-0.5 text-xs bg-slate-50 hover:bg-slate-200 border border-slate-200 rounded font-bold">◀</button>
+        <button onclick="nextTheme()" id="btnNextTop" class="px-1.5 py-0.5 text-xs bg-slate-50 hover:bg-slate-200 border border-slate-200 rounded font-bold">▶</button>
+        <div id="ttsStatusBadge" class="w-5 h-5 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-[10px] shadow-inner shrink-0" title="音声ステータス">
+          <span id="playingIcon">🔊</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ステップナビゲーションバー（時系列進行度表示） -->
+  <div class="bg-slate-200/80 border-b border-slate-300 sticky top-[33px] z-30 px-2 py-1">
+    <div class="max-w-3xl mx-auto flex items-center justify-between gap-1 text-xs">
+      <button onclick="prevTheme()" class="px-2 py-0.5 bg-white hover:bg-slate-100 active:bg-slate-300 border border-slate-300 rounded text-[11px] font-semibold text-slate-700 shrink-0">
+        ◀ 前へ
+      </button>
+      <div class="text-[11px] font-bold text-slate-700 truncate text-center px-1" id="stepIndicator">
+        1 / 70 ｜ 時系列順
+      </div>
+      <button onclick="nextTheme()" class="px-2 py-0.5 bg-white hover:bg-slate-100 active:bg-slate-300 border border-slate-300 rounded text-[11px] font-semibold text-slate-700 shrink-0">
+        次へ ▶
+      </button>
+    </div>
+  </div>
+
+  <!-- スライド式 目次ドロワー（第1巻からエピローグまでの完全年代順） -->
+  <div id="drawerBackdrop" class="fixed inset-0 bg-slate-900/50 z-50 opacity-0 pointer-events-none transition-opacity duration-200" onclick="toggleDrawer(false)">
+    <div id="tocDrawer" class="w-4/5 max-w-sm h-full bg-white shadow-2xl flex flex-col -translate-x-full" onclick="event.stopPropagation()">
+      <div class="p-2.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div>
+          <h2 class="font-bold text-xs text-slate-900">📑 全70場面 目次（原作時系列章順）</h2>
+          <p class="text-[10px] text-slate-500">第1巻第1部 〜 エピローグ結語まで完全収録</p>
+        </div>
+        <button onclick="toggleDrawer(false)" class="w-6 h-6 flex items-center justify-center rounded bg-slate-200 text-slate-700 text-xs font-bold">✕</button>
+      </div>
+      
+      <div class="p-2 border-b border-slate-200 bg-white">
+        <input type="text" id="tocSearchInput" oninput="filterToc()" placeholder="🔍 検索 (例: 彗星, サロン, アウステルリッツ, 羊)..." class="w-full text-xs px-2 py-1 border border-slate-300 rounded focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-2 space-y-1.5" id="drawerList">
+        <!-- JSで動的描画 -->
+      </div>
+
+      <div class="p-2 border-t border-slate-200 bg-slate-50 text-[10px] text-slate-500 text-center font-medium">
+        ロシア語厳密語順直読 ＆ 原作章順 100%完全統合
+      </div>
+    </div>
+  </div>
+
+  <!-- メインコンテンツ領域 -->
+  <main class="max-w-3xl mx-auto px-1.5 py-1.5 flex-1 w-full space-y-1.5" id="contentArea">
+    <!-- JS描画 -->
+  </main>
+
+  <!-- ページ下部ステップバー -->
+  <div class="max-w-3xl mx-auto w-full px-2 py-3 flex justify-between items-center gap-2">
+    <button onclick="prevTheme()" class="flex-1 py-1.5 bg-white hover:bg-slate-100 active:bg-slate-200 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 shadow-xs">
+      ◀ 前の場面へ
+    </button>
+    <button onclick="toggleDrawer(true)" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-bold shadow-xs">
+      ≡ 目次一覧
+    </button>
+    <button onclick="nextTheme()" class="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-xs font-bold shadow-xs">
+      次の場面へ ▶
+    </button>
+  </div>
+
+  <footer class="bg-white border-t border-slate-200 py-2.5 text-center text-[10px] text-slate-400">
+    Л. Н. Толстой «Война и мир» 原作時系列章順・全70場面 露語品詞順直読リーダー
+  </footer>
+
+
+  <!-- 1. 外部データファイル (all70Themes) 読み込み -->
+  <script src="data.js"></script>
+
+  <!-- 2. アプリ本体ロジック -->
+  <script>
+    // Service Worker 登録 (PWA & ネットワーク優先オフライン対応)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => {
+            console.log('PWA ServiceWorker registered:', reg.scope);
+            reg.update();
+          })
+          .catch(err => console.log('ServiceWorker registration skipped/failed:', err));
+      });
+    }
+
+    let currentAudio = null;
+
+    function setAudioStatus(isPlaying) {
+      const icon = document.getElementById("playingIcon");
+      const badge = document.getElementById("ttsStatusBadge");
+      if (icon) icon.textContent = isPlaying ? "⏳" : "🔊";
+      if (badge) {
+        badge.className = isPlaying
+          ? "w-5 h-5 rounded-full bg-blue-50 border border-blue-300 flex items-center justify-center text-[10px] animate-pulse"
+          : "w-5 h-5 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-[10px] shadow-inner";
+      }
+    }
+
+    function speak(text, lang = 'ru') {
+      if (!text) return;
+      if (currentAudio) {
+        try { currentAudio.pause(); currentAudio.currentTime = 0; } catch (e) {}
+        currentAudio = null;
+      }
+      if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
+
+      setAudioStatus(true);
+      const cleanText = text.replace(/[\r\n]+/g, ' ').trim();
+      const ttsLang = lang === 'fr' ? 'fr' : 'ru';
+      const url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=" + ttsLang + "&client=tw-ob&q=" + encodeURIComponent(cleanText);
+
+      let audio = document.getElementById("globalAudio");
+      if (!audio) {
+        audio = new Audio();
+        audio.id = "globalAudio";
+        audio.referrerPolicy = "no-referrer";
+        document.body.appendChild(audio);
+      } else {
+        audio.referrerPolicy = "no-referrer";
+      }
+      currentAudio = audio;
+
+      let fallbackStarted = false;
+      const triggerFallback = () => {
+        if (!fallbackStarted) {
+          fallbackStarted = true;
+          currentAudio = null;
+          fallbackSpeechSynthesis(cleanText, ttsLang);
+        }
+      };
+
+      audio.onended = () => {
+        setAudioStatus(false);
+        currentAudio = null;
+      };
+      audio.onerror = () => {
+        triggerFallback();
+      };
+
+      audio.src = url;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          triggerFallback();
+        });
+      }
+    }
+
+    function fallbackSpeechSynthesis(text, ttsLang) {
+      try {
+        if (!('speechSynthesis' in window)) { setAudioStatus(false); return; }
+        window.speechSynthesis.cancel();
+        const ut = new SpeechSynthesisUtterance(text);
+        ut.lang = ttsLang === 'fr' ? 'fr-FR' : 'ru-RU';
+        ut.rate = 0.85;
+        ut.onend = () => setAudioStatus(false);
+        ut.onerror = () => setAudioStatus(false);
+        window.speechSynthesis.speak(ut);
+      } catch (e) {
+        setAudioStatus(false);
+      }
+    }
+
+    let currentIdx = 0;
+
+    function openTheme(index) {
+      currentIdx = index;
+      toggleDrawer(false);
+      renderContent();
+      updateNavButtons();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function prevTheme() {
+      if (currentIdx > 0) {
+        openTheme(currentIdx - 1);
+      }
+    }
+
+    function nextTheme() {
+      if (currentIdx < all70Themes.length - 1) {
+        openTheme(currentIdx + 1);
+      }
+    }
+
+    function updateNavButtons() {
+      const theme = all70Themes[currentIdx];
+      document.getElementById("headerTitle").textContent = `${theme.id}. ${theme.title}`;
+      document.getElementById("stepIndicator").textContent = `${theme.id} / 70 ｜ [${theme.bookPart}] ${theme.title}`;
+      document.getElementById("btnPrevTop").disabled = (currentIdx === 0);
+      document.getElementById("btnNextTop").disabled = (currentIdx === all70Themes.length - 1);
+    }
+
+    function toggleDrawer(open) {
+      const backdrop = document.getElementById("drawerBackdrop");
+      const drawer = document.getElementById("tocDrawer");
+      if (open) {
+        backdrop.classList.remove("pointer-events-none", "opacity-0");
+        backdrop.classList.add("opacity-100");
+        drawer.classList.remove("-translate-x-full");
+        document.getElementById("tocSearchInput").focus();
+      } else {
+        backdrop.classList.add("opacity-0", "pointer-events-none");
+        backdrop.classList.remove("opacity-100");
+        drawer.classList.add("-translate-x-full");
+      }
+    }
+
+    function renderDrawer() {
+      const container = document.getElementById("drawerList");
+      container.innerHTML = all70Themes.map((theme, idx) => {
+        const isSelected = idx === currentIdx;
+        return `
+          <div onclick="openTheme(${idx})" class="p-2 rounded-lg cursor-pointer transition flex items-center justify-between gap-1.5 ${
+            isSelected 
+              ? 'bg-slate-900 text-white font-bold' 
+              : 'bg-slate-50 hover:bg-slate-200 text-slate-800 border border-slate-200'
+          }">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1 mb-0.5">
+                <span class="text-[9px] px-1 py-0.2 rounded font-mono ${isSelected ? 'bg-slate-700 text-slate-200' : 'bg-slate-200 text-slate-600'}">
+                  #${theme.id}
+                </span>
+                <span class="text-[8px] bg-amber-100 text-amber-900 px-1 rounded font-bold">${theme.bookPart}</span>
+                <span class="text-[8px] bg-blue-100 text-blue-900 px-1 rounded truncate max-w-[90px]">${theme.cat}</span>
+              </div>
+              <p class="text-xs truncate">${theme.title}</p>
+            </div>
+            <span class="text-xs shrink-0 ${isSelected ? 'text-slate-300' : 'text-slate-400'}">›</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function filterToc() {
+      const query = document.getElementById("tocSearchInput").value.toLowerCase().trim();
+      const items = document.getElementById("drawerList").children;
+      for (let i = 0; i < all70Themes.length; i++) {
+        const theme = all70Themes[i];
+        const text = (theme.title + " " + theme.cat + " " + theme.sub + " " + theme.bookPart).toLowerCase();
+        if (text.includes(query) || (theme.id).toString().includes(query)) {
+          items[i].style.display = "flex";
+        } else {
+          items[i].style.display = "none";
+        }
+      }
+    }
+
+    function renderContent() {
+      const container = document.getElementById("contentArea");
+      const themeData = all70Themes[currentIdx];
+
+      container.innerHTML = `
+        <!-- あらすじ・文脈解説ボックス -->
+        <div class="bg-amber-50/90 border border-amber-200/90 rounded-lg p-2.5 mb-1.5 shadow-xs">
+          <div class="flex items-center justify-between gap-1 mb-0.5">
+            <span class="text-[9px] font-bold text-amber-900 bg-amber-200/70 px-1.5 py-0.2 rounded">
+              第 ${themeData.id} 場面 ｜ ${themeData.bookPart}
+            </span>
+            <span class="text-[10px] text-amber-700 font-medium truncate max-w-[170px] sm:max-w-none">${themeData.cat}</span>
+          </div>
+          <h2 class="text-xs sm:text-sm font-bold text-amber-950 mt-1">${themeData.title}</h2>
+          <p class="text-[11px] sm:text-xs text-amber-900 leading-relaxed mt-1 font-normal border-t border-amber-200/50 pt-1">
+            ${themeData.synopsis}
+          </p>
+        </div>
+      ` + themeData.sentences.map(item => `
+        <article class="bg-white rounded-lg border border-slate-200 p-2 shadow-xs">
+          <!-- 文ヘッダー -->
+          <div class="border-b border-slate-100 pb-1.5 mb-1.5">
+            <div class="flex flex-wrap items-center justify-between gap-1 mb-0.5">
+              <span class="inline-block px-1.5 py-0.2 bg-slate-100 text-slate-700 text-[9px] font-bold rounded">
+                第 ${item.no} 文 ｜ ${item.speaker}
+              </span>
+              <button onclick="speak('${item.ru.replace(/'/g, "\\'")}', '${item.lang || 'ru'}')" class="inline-flex items-center space-x-1 px-1.5 py-0.2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-[10px] font-bold rounded transition active:scale-95 shrink-0">
+                <span>🔊 一文通し</span>
+              </button>
+            </div>
+            <p class="text-sm sm:text-base font-bold text-slate-900 leading-snug tracking-normal mt-0.5 word-natural">
+              ${item.ru}
+            </p>
+          </div>
+
+          <!-- フレーズ別スラッシュ語順直訳（露語の品詞順序に厳格一致・枠タップで発音） -->
+          <div class="mb-1.5">
+            <div class="flex items-center justify-between mb-0.5">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">ロシア語 語順・品詞完全一致 直訳解説</span>
+              <span class="text-[9px] text-blue-600/75">枠タップで音声 👆</span>
+            </div>
+            <div class="space-y-1">
+              ${item.chunks.map(ch => `
+                <div onclick="speak('${ch.ru.replace(/'/g, "\\'")}', '${item.lang || 'ru'}')" 
+                     class="px-2 py-1.5 bg-slate-50 border border-slate-200/80 rounded-md hover:bg-blue-50/60 active:bg-blue-100 active:border-blue-400 transition cursor-pointer select-none">
+                  <div class="w-full">
+                    <p class="font-bold text-slate-950 text-sm sm:text-base leading-snug tracking-normal word-natural">${ch.ru}</p>
+                    <p class="text-[10px] sm:text-[11px] text-slate-600 leading-tight font-mono mt-0.5 pt-0.5 border-t border-slate-200/50 note-natural">${ch.note}</p>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+
+          <!-- 自然な日本語訳 -->
+          <div class="bg-emerald-50/60 border border-emerald-200/70 rounded p-1.5">
+            <div class="text-[8px] font-bold text-emerald-800 uppercase tracking-wider mb-0.2">自然な日本語訳</div>
+            <p class="text-[10px] sm:text-xs text-slate-800 font-medium leading-snug">
+              ${item.ja}
+            </p>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      renderDrawer();
+      openTheme(0);
+    });
+  </script>
+</body>
+</html>
